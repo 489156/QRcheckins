@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -5,23 +6,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>교육 출석체크</title>
   <style>
-    body { font-family: 'Malgun Gothic', sans-serif; background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); margin:0; padding:20px; min-height:100vh; display:flex; justify-content:center; align-items:center; }
-    .container { background:white; padding:40px; border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,0.3); text-align:center; max-width:400px; width:100%; }
-    .event-badge { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:white; padding:10px 20px; border-radius:20px; font-size:16px; font-weight:bold; margin-bottom:20px; display:inline-block; }
-    .title { color:#333; font-size:28px; margin-bottom:30px; font-weight:bold; }
-    .error-page { background:#f8d7da; border:1px solid #f5c6cb; padding:20px; border-radius:10px; margin-bottom:20px; display:none; }
-    .error-page h2 { color:#721c24; margin-top:0; }
+    /* 기존 스타일 그대로 유지 */
+    body { font-family:'Malgun Gothic',sans-serif; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); margin:0; padding:20px; display:flex; justify-content:center; align-items:center; min-height:100vh; }
+    .container { background:#fff; padding:40px; border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,0.3); text-align:center; max-width:400px; width:100%; }
+    .event-badge { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; padding:10px 20px; border-radius:20px; font-size:16px; font-weight:bold; margin-bottom:20px; display:inline-block; }
+    .title { font-size:28px; color:#333; margin-bottom:30px; font-weight:bold; }
+    .error-page { display:none; background:#f8d7da; border:1px solid #f5c6cb; padding:20px; border-radius:10px; margin-bottom:20px; }
+    .error-page h2 { color:#721c24; margin:0 0 10px; }
     .input-group { margin-bottom:30px; }
-    label { display:block; margin-bottom:10px; color:#555; font-size:18px; font-weight:bold; }
-    input[type="tel"] { width:100%; padding:15px; font-size:18px; border:2px solid #ddd; border-radius:8px; box-sizing:border-box; text-align:center; }
-    input[type="tel"]:focus { border-color:#667eea; outline:none; box-shadow:0 0 10px rgba(102,126,234,0.3); }
-    .submit-btn { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:white; padding:15px 40px; font-size:20px; font-weight:bold; border:none; border-radius:8px; cursor:pointer; width:100%; transition:transform 0.2s; }
+    label { display:block; margin-bottom:10px; font-size:18px; color:#555; font-weight:bold; }
+    input[type="tel"] { width:100%; padding:15px; font-size:18px; border:2px solid #ddd; border-radius:8px; text-align:center; box-sizing:border-box; }
+    input[type="tel"]:focus { outline:none; border-color:#667eea; box-shadow:0 0 10px rgba(102,126,234,0.3); }
+    .submit-btn { width:100%; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; padding:15px; font-size:20px; font-weight:bold; border:none; border-radius:8px; cursor:pointer; transition:transform .2s; }
     .submit-btn:hover { transform:translateY(-2px); box-shadow:0 5px 15px rgba(0,0,0,0.2); }
-    .submit-btn:disabled { background:#ccc; cursor:not-allowed; transform:none; }
-    .message { margin-top:20px; padding:15px; border-radius:8px; font-weight:bold; display:none; }
+    .message { display:none; margin-top:20px; padding:15px; border-radius:8px; font-weight:bold; }
     .success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
     .error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
-    .info { margin-top:20px; color:#666; font-size:14px; line-height:1.5; display:none; }
+    .info { display:none; margin-top:20px; color:#666; font-size:14px; line-height:1.5; }
   </style>
 </head>
 <body>
@@ -37,22 +38,33 @@
         <label for="phone">휴대전화번호</label>
         <input type="tel" id="phone" placeholder="010-1234-5678" required>
       </div>
-      <button type="submit" id="submitBtn" class="submit-btn">출석 확인</button>
+      <button type="submit" class="submit-btn">출석 확인</button>
     </form>
     <div id="message" class="message"></div>
     <div id="infoSection" class="info">
-      휴대전화번호를 입력하여 출석체크를 완료해주세요.<br>
-      하이픈(-)은 있어도 없어도 됩니다.
+      휴대전화번호를 입력하여 출석체크를 완료해주세요.<br>하이픈(-)은 있어도 없어도 됩니다.
     </div>
   </div>
 
   <script>
-    // Web App URL
-    const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbz4X8yM17SGEXOjWuahRGoC0m_u34Sy6bSgT9yBS0m0Iv9GZiPJBLU-CCL8vNF5e-yhcw/exec';
+    // JSONP 콜백
+    function handleStudentList(data) {
+      window.studentList = data;
+      initialize();
+    }
 
-    // 전역 변수
-    let studentList = {};
-    let deviceId = localStorage.getItem('deviceId') || (crypto.randomUUID() && localStorage.setItem('deviceId', deviceId));
+    // JSONP 로드
+    (function(){
+      const script = document.createElement('script');
+      script.src = 'https://script.google.com/macros/s/AKfycbwHysYm9ipYAUU6kF6xPy_xSCF5FoJ0jvCCMzXbNs6BNwxrkMNI3_D4hfcjt_BqBe5NUA/exec?callback=handleStudentList';
+      document.body.appendChild(script);
+    })();
+
+    let deviceId = localStorage.getItem('deviceId');
+    if (!deviceId) {
+      deviceId = crypto.randomUUID();
+      localStorage.setItem('deviceId', deviceId);
+    }
 
     const eventNames = {
       'day1_morning':'1일차 오전 (09:00)',
@@ -63,26 +75,14 @@
     const params = new URLSearchParams(location.search);
     const currentEvent = params.get('event');
 
-    // 명단 로드
-    fetch(SHEET_API_URL)
-      .then(res => res.json())
-      .then(data => {
-        studentList = data;
-        initialize();
-      })
-      .catch(() => {
-        alert('명단 로드에 실패했습니다.');
-      });
-
     function initialize() {
-      if (!eventNames[currentEvent]) {
+      if (!window.studentList || !eventNames[currentEvent]) {
         document.getElementById('errorPage').style.display = 'block';
         return;
       }
       document.getElementById('eventBadge').textContent = eventNames[currentEvent];
       document.getElementById('attendanceForm').style.display = 'block';
       document.getElementById('infoSection').style.display = 'block';
-
       document.getElementById('attendanceForm').addEventListener('submit', handleSubmit);
     }
 
@@ -98,28 +98,25 @@
         return showMessage('등록되지 않은 휴대전화번호입니다.','error');
       }
       let data = JSON.parse(localStorage.getItem('attendanceData')||'{}');
-      if (!data[phone]) data[phone] = { name, events: {} };
+      if (!data[phone]) data[phone] = {name,events:{}};
       const rec = data[phone].events[currentEvent];
       if (rec) {
-        if (rec.deviceId !== deviceId) return showMessage('다른 기기에서 이미 출석했습니다.','error');
+        if (rec.deviceId!==deviceId) return showMessage('다른 기기에서 이미 출석했습니다.','error');
         return showMessage(`${name}님은 이미 출석하셨습니다.`,'error');
       }
       const now = new Date();
-      const ts = String(now.getMonth()+1).padStart(2,'0') + '/'
-               + String(now.getDate()).padStart(2,'0') + ', '
-               + String(now.getHours()).padStart(2,'0') + ':'
-               + String(now.getMinutes()).padStart(2,'0');
-      data[phone].events[currentEvent] = { timestamp: ts, deviceId };
-      localStorage.setItem('attendanceData', JSON.stringify(data));
+      const ts = String(now.getMonth()+1).padStart(2,'0')+'/'+String(now.getDate()).padStart(2,'0')+', '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+      data[phone].events[currentEvent]={timestamp:ts,deviceId};
+      localStorage.setItem('attendanceData',JSON.stringify(data));
       showMessage(`${name}님, 출석 완료 (${ts})`,'success');
     }
 
-    function showMessage(text, type) {
+    function showMessage(msg,type) {
       const el = document.getElementById('message');
-      el.textContent = text;
+      el.textContent = msg;
       el.className = `message ${type}`;
       el.style.display = 'block';
-      if (type === 'success') setTimeout(() => location.reload(), 2000);
+      if(type==='success') setTimeout(()=>location.reload(),2000);
     }
   </script>
 </body>
