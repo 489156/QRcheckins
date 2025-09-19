@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>교육 출석체크</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .event-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .title {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+
+        .input-group {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #555;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        input[type="tel"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        input[type="tel"]:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            display: none;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info {
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .error-page {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .error-page h2 {
+            color: #721c24;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="eventBadge" class="event-badge"></div>
+        <div class="title">📋 교육 출석체크</div>
+
+        <div id="errorMessage" class="error-page" style="display: none;">
+            <h2>⚠️ 잘못된 접근입니다</h2>
+            <p>올바른 QR코드를 스캔하여 접속해주세요.</p>
+        </div>
+
+        <form id="attendanceForm" style="display: none;">
+            <div class="input-group">
+                <label for="phone">휴대전화번호</label>
+                <input type="tel" id="phone" name="phone" placeholder="010-1234-5678" required>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">출석 확인</button>
+        </form>
+
+        <div id="message" class="message"></div>
+
+        <div class="info" id="infoSection" style="display: none;">
+            휴대전화번호를 입력하여 출석체크를 완료해주세요.<br>
+            하이픈(-)은 있어도 없어도 됩니다.
+        </div>
+    </div>
+
+    <script>
+        // 교육생 명단 (실제 사용시에는 이 부분을 수정하세요)
+        const studentList = {
+            '01082123698': '신동하',
+            '01048842236': '이성주',
+            '01044110409': '하나현',
+            '01093763225': '김재하',
+            '01091573109': '한승호',
+            '01073591226': '문영주',
+            '01022219219': '김재영',
+            '01048749245': '박성호',
+            '01094796810': '강현정',
+            '01027754561': '양문일',
+            '01034341343': '박도연',
+            '01072230475': '김혜리',
+            '01040546272': '김기태',
+            '01026529008': '황현진',
+            '01038388015': '권윤경',
+            '01025532652': '윤정훈',
+            '01083685635': '손석홍',
+            '01029127176': '엄기철',
+            '01033074257': '송용석',
+            '01028798460': '오철진',
+            '01072774457': '유영욱',
+            '01045666411': '이승희',
+            '01043798508': '이병길',
+            '01088741172': '김희영',
+            '01062644832': '손영지',
+            '01072443789': '예성민',
+            '01067899391': '문지수',
+            '01082183288': '조혜정',
+            '01066546059': '고재윤',
+            '01091676897': '성상훈',
+            '01092784335': '이미경',
+            '01090087476': '김경란',
+            '01030634395': '조규태',
+            '01024219154': '최경훈',
+            '01040009967': '신현정',
+            '01090039373': '김종필',
+            '01047698831': '장원구',
+            '01087392594': '이현주'
+        };
+
+        const eventNames = {
+            'day1_morning': '1일차 오전 (09:00)',
+            'day1_evening': '1일차 오후 (17:30)',
+            'day2_morning': '2일차 오전 (09:00)',
+            'day2_evening': '2일차 오후 (17:30)'
+        };
+
+        // URL 파라미터에서 이벤트 정보 가져오기
+        function getCurrentEventFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('event');
+        }
+
+        // 페이지 초기화
+        function initializePage() {
+            const currentEvent = getCurrentEventFromURL();
+            const eventBadge = document.getElementById('eventBadge');
+            const errorMessage = document.getElementById('errorMessage');
+            const attendanceForm = document.getElementById('attendanceForm');
+            const infoSection = document.getElementById('infoSection');
+
+            if (!currentEvent || !eventNames[currentEvent]) {
+                // 잘못된 이벤트 또는 이벤트 없음
+                eventBadge.style.display = 'none';
+                errorMessage.style.display = 'block';
+                attendanceForm.style.display = 'none';
+                infoSection.style.display = 'none';
+                return;
+            }
+
+            // 정상적인 이벤트
+            eventBadge.textContent = eventNames[currentEvent];
+            eventBadge.style.display = 'inline-block';
+            errorMessage.style.display = 'none';
+            attendanceForm.style.display = 'block';
+            infoSection.style.display = 'block';
+
+            // 이벤트 정보를 전역 변수에 저장
+            window.currentEvent = currentEvent;
+        }
+
+        document.getElementById('attendanceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const phoneInput = document.getElementById('phone');
+            const submitBtn = document.getElementById('submitBtn');
+            const messageDiv = document.getElementById('message');
+
+            // 전화번호 정리 (하이픈 제거, 공백 제거)
+            const phone = phoneInput.value.replace(/[^0-9]/g, '');
+
+            // 전화번호 유효성 검사
+            if (phone.length !== 11 || !phone.startsWith('010')) {
+                showMessage('올바른 휴대전화번호를 입력해주세요. (010으로 시작하는 11자리)', 'error');
+                return;
+            }
+
+            // 등록된 교육생인지 확인
+            if (!studentList[phone]) {
+                showMessage('등록되지 않은 휴대전화번호입니다. 담당자에게 문의해주세요.', 'error');
+                return;
+            }
+
+            // 버튼 비활성화
+            submitBtn.disabled = true;
+            submitBtn.textContent = '처리중...';
+
+            // 출석 데이터 저장
+            saveAttendance(phone, studentList[phone]);
+        });
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    location.reload();
+                }, 3000);
+            } else {
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '출석 확인';
+            }
+        }
+
+        function saveAttendance(phone, name) {
+            const now = new Date();
+            const timestamp = now.toLocaleString('ko-KR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+
+            // 기존 출석 데이터 가져오기
+            let attendanceData = JSON.parse(localStorage.getItem('attendanceData') || '{}');
+
+            // 출석 데이터 구조: {phone: {name: string, events: {event1: timestamp, event2: timestamp, ...}}}
+            if (!attendanceData[phone]) {
+                attendanceData[phone] = {
+                    name: name,
+                    events: {}
+                };
+            }
+
+            // 이미 출석한 경우 체크
+            if (attendanceData[phone].events[window.currentEvent]) {
+                showMessage(`${name}님은 이미 ${eventNames[window.currentEvent]} 출석체크를 완료하였습니다.`, 'error');
+                return;
+            }
+
+            // 출석 데이터 저장
+            attendanceData[phone].events[window.currentEvent] = timestamp;
+            localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+
+            showMessage(`${name}님, ${eventNames[window.currentEvent]} 출석체크가 완료되었습니다!`, 'success');
+        }
+
+        // 전화번호 입력시 자동 하이픈 추가
+        document.getElementById('phone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/[^0-9]/g, '');
+            if (value.length >= 3 && value.length <= 7) {
+                value = value.replace(/(\d{3})(\d+)/, '$1-$2');
+            } else if (value.length > 7) {
+                value = value.replace(/(\d{3})(\d{4})(\d+)/, '$1-$2-$3');
+            }
+            e.target.value = value;
+        });
+
+        // 페이지 로드시 초기화
+        document.addEventListener('DOMContentLoaded', initializePage);
+    </script>
+</body>
+</html>

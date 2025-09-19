@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>출석체크 관리자 대시보드</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        .qr-urls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .qr-urls h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .url-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        .url-label {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+
+        .url-link {
+            font-family: monospace;
+            background: white;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 3px;
+            word-break: break-all;
+            font-size: 12px;
+            color: #007bff;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .control-group {
+            display: inline-block;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+
+        .control-group label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        select, button {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        button:hover {
+            background: #5a67d8;
+        }
+
+        .stats {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .stat-item {
+            display: inline-block;
+            margin-right: 30px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #eee;
+            text-align: center;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        .name-col {
+            font-weight: bold;
+            text-align: left;
+            background-color: #f8f9fa;
+        }
+
+        .phone-col {
+            font-family: monospace;
+            color: #666;
+        }
+
+        .present {
+            color: #28a745;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .absent {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .export-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .refresh-info {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #1976d2;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                text-align: center;
+            }
+
+            .control-group {
+                display: block;
+                margin-bottom: 15px;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px 4px;
+            }
+
+            .url-link {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 출석체크 관리자 대시보드</h1>
+        <div id="lastUpdate"></div>
+    </div>
+
+    <div class="qr-urls">
+        <h3>🎯 QR 코드 생성용 URL 목록</h3>
+        <p>각 이벤트별로 아래 URL을 QR 코드로 생성하여 인쇄하세요:</p>
+
+        <div class="url-item">
+            <div class="url-label">1일차 오전 (09:00)</div>
+            <div class="url-link" id="url1"></div>
+        </div>
+
+        <div class="url-item">
+            <div class="url-label">1일차 오후 (17:30)</div>
+            <div class="url-link" id="url2"></div>
+        </div>
+
+        <div class="url-item">
+            <div class="url-label">2일차 오전 (09:00)</div>
+            <div class="url-link" id="url3"></div>
+        </div>
+
+        <div class="url-item">
+            <div class="url-label">2일차 오후 (17:30)</div>
+            <div class="url-link" id="url4"></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <button onclick="refreshData()">🔄 새로고침</button>
+            <button onclick="exportData()">📊 CSV 내보내기</button>
+            <button onclick="clearData()" style="background: #dc3545;">🗑️ 데이터 초기화</button>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat-item">
+            <div class="stat-number" id="totalStudents">0</div>
+            <div class="stat-label">총 교육생</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number" id="totalAttendance">0</div>
+            <div class="stat-label">전체 출석 건수</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number" id="avgAttendanceRate">0%</div>
+            <div class="stat-label">평균 출석률</div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table id="attendanceTable">
+            <thead>
+                <tr>
+                    <th>이름</th>
+                    <th>휴대전화번호</th>
+                    <th>1일차 오전</th>
+                    <th>1일차 오후</th>
+                    <th>2일차 오전</th>
+                    <th>2일차 오후</th>
+                    <th>출석률</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceTableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <div class="export-section">
+        <div class="refresh-info">
+            💡 실시간 데이터 확인을 위해 정기적으로 새로고침 버튼을 클릭해주세요.<br>
+            QR 코드는 위의 URL 목록을 이용하여 각각 생성하세요.
+        </div>
+    </div>
+
+    <script>
+        // 교육생 명단 (실제 사용시에는 이 부분을 수정하세요)
+        const studentList = {
+            '01082123698': '신동하',
+            '01048842236': '이성주',
+            '01044110409': '하나현',
+            '01093763225': '김재하',
+            '01091573109': '한승호',
+            '01073591226': '문영주',
+            '01022219219': '김재영',
+            '01048749245': '박성호',
+            '01094796810': '강현정',
+            '01027754561': '양문일',
+            '01034341343': '박도연',
+            '01072230475': '김혜리',
+            '01040546272': '김기태',
+            '01026529008': '황현진',
+            '01038388015': '권윤경',
+            '01025532652': '윤정훈',
+            '01083685635': '손석홍',
+            '01029127176': '엄기철',
+            '01033074257': '송용석',
+            '01028798460': '오철진',
+            '01072774457': '유영욱',
+            '01045666411': '이승희',
+            '01043798508': '이병길',
+            '01088741172': '김희영',
+            '01062644832': '손영지',
+            '01072443789': '예성민',
+            '01067899391': '문지수',
+            '01082183288': '조혜정',
+            '01066546059': '고재윤',
+            '01091676897': '성상훈',
+            '01092784335': '이미경',
+            '01090087476': '김경란',
+            '01030634395': '조규태',
+            '01024219154': '최경훈',
+            '01040009967': '신현정',
+            '01090039373': '김종필',
+            '01047698831': '장원구',
+            '01087392594': '이현주'
+        };
+
+        const eventNames = {
+            'day1_morning': '1일차 오전',
+            'day1_evening': '1일차 오후',
+            'day2_morning': '2일차 오전',
+            'day2_evening': '2일차 오후'
+        };
+
+        function loadAttendanceData() {
+            return JSON.parse(localStorage.getItem('attendanceData') || '{}');
+        }
+
+        function initializeURLs() {
+            const baseURL = window.location.origin + window.location.pathname.replace('admin_dashboard.html', '');
+
+            document.getElementById('url1').textContent = baseURL + '?event=day1_morning';
+            document.getElementById('url2').textContent = baseURL + '?event=day1_evening';
+            document.getElementById('url3').textContent = baseURL + '?event=day2_morning';
+            document.getElementById('url4').textContent = baseURL + '?event=day2_evening';
+        }
+
+        function updateDashboard() {
+            const attendanceData = loadAttendanceData();
+            const tableBody = document.getElementById('attendanceTableBody');
+
+            tableBody.innerHTML = '';
+
+            let totalStudents = Object.keys(studentList).length;
+            let totalAttendanceCount = 0;
+            let totalAttendanceSum = 0;
+
+            // 각 교육생별로 행 생성
+            for (const [phone, name] of Object.entries(studentList)) {
+                const row = document.createElement('tr');
+
+                // 이름
+                const nameCell = document.createElement('td');
+                nameCell.textContent = name;
+                nameCell.className = 'name-col';
+                row.appendChild(nameCell);
+
+                // 전화번호
+                const phoneCell = document.createElement('td');
+                phoneCell.textContent = phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+                phoneCell.className = 'phone-col';
+                row.appendChild(phoneCell);
+
+                // 각 이벤트별 출석 상태
+                const events = ['day1_morning', 'day1_evening', 'day2_morning', 'day2_evening'];
+                let attendedEvents = 0;
+
+                events.forEach(event => {
+                    const cell = document.createElement('td');
+                    const studentData = attendanceData[phone];
+
+                    if (studentData && studentData.events[event]) {
+                        const timestamp = studentData.events[event];
+                        const timeOnly = timestamp.split(' ')[1]; // 시간 부분만 추출
+                        cell.innerHTML = `<div class="present">출석</div><div style="font-size: 10px; color: #666;">${timeOnly}</div>`;
+                        attendedEvents++;
+                        totalAttendanceCount++;
+                    } else {
+                        cell.textContent = '미출석';
+                        cell.className = 'absent';
+                    }
+
+                    row.appendChild(cell);
+                });
+
+                // 개인 출석률
+                const rateCell = document.createElement('td');
+                const rate = Math.round((attendedEvents / 4) * 100);
+                rateCell.textContent = rate + '%';
+                rateCell.style.fontWeight = 'bold';
+                rateCell.style.color = rate >= 75 ? '#28a745' : rate >= 50 ? '#ffc107' : '#dc3545';
+                row.appendChild(rateCell);
+
+                totalAttendanceSum += rate;
+                tableBody.appendChild(row);
+            }
+
+            // 통계 업데이트
+            document.getElementById('totalStudents').textContent = totalStudents;
+            document.getElementById('totalAttendance').textContent = totalAttendanceCount;
+            document.getElementById('avgAttendanceRate').textContent = 
+                totalStudents > 0 ? Math.round(totalAttendanceSum / totalStudents) + '%' : '0%';
+
+            // 마지막 업데이트 시간
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = 
+                '마지막 업데이트: ' + now.toLocaleString('ko-KR');
+        }
+
+        function refreshData() {
+            updateDashboard();
+            alert('데이터가 새로고침되었습니다.');
+        }
+
+        function exportData() {
+            const attendanceData = loadAttendanceData();
+
+            // CSV 헤더
+            let csv = 'Name,Phone,Day1_Morning,Day1_Evening,Day2_Morning,Day2_Evening,Attendance_Rate\n';
+
+            // 각 교육생 데이터
+            for (const [phone, name] of Object.entries(studentList)) {
+                const studentData = attendanceData[phone];
+                const events = ['day1_morning', 'day1_evening', 'day2_morning', 'day2_evening'];
+
+                let attendedCount = 0;
+                let eventData = [];
+
+                events.forEach(event => {
+                    if (studentData && studentData.events[event]) {
+                        eventData.push(`"${studentData.events[event]}"`);
+                        attendedCount++;
+                    } else {
+                        eventData.push('미출석');
+                    }
+                });
+
+                const rate = Math.round((attendedCount / 4) * 100);
+                const phoneFormatted = phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+
+                csv += `"${name}","${phoneFormatted}",${eventData.join(',')},${rate}%\n`;
+            }
+
+            // CSV 파일 다운로드
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `attendance_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function clearData() {
+            if (confirm('정말로 모든 출석 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) {
+                localStorage.removeItem('attendanceData');
+                updateDashboard();
+                alert('모든 출석 데이터가 삭제되었습니다.');
+            }
+        }
+
+        // 페이지 로드시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeURLs();
+            updateDashboard();
+
+            // 5분마다 자동 새로고침
+            setInterval(updateDashboard, 300000);
+        });
+    </script>
+</body>
+</html>
