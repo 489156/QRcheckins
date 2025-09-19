@@ -1,3 +1,4 @@
+<!-- admin_dashboard.html -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -5,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>출석체크 관리자 대시보드</title>
   <style>
+    /* 기존 스타일 유지 */
     body{font-family:'Malgun Gothic',sans-serif;margin:0;padding:20px;background:#f5f5f5;}
     .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:20px;border-radius:10px;text-align:center;}
     .header h1{margin:0;font-size:28px;}
@@ -30,20 +32,13 @@
 </head>
 <body>
   <script>
-    const ADMIN_PW = 'edu2025';
-    const pwd = prompt('관리자 패스워드:');
-    if (pwd !== ADMIN_PW) {
-      document.body.innerHTML = '<div style="text-align:center;padding:50px;"><h2>접근이 거부되었습니다.</h2></div>';
-      throw 'Unauthorized';
-    }
+    const ADMIN_PW='edu2025';
+    const pwd=prompt('관리자 패스워드:');
+    if(pwd!==ADMIN_PW){ document.body.innerHTML='<div style="text-align:center;padding:50px;"><h2>접근이 거부되었습니다.</h2></div>'; throw 'Unauthorized'; }
   </script>
 
   <div id="dashboard">
-    <div class="header">
-      <h1>📊 출석체크 관리자 대시보드</h1>
-      <div id="lastUpdate"></div>
-    </div>
-
+    <div class="header"><h1>📊 출석체크 관리자 대시보드</h1><div id="lastUpdate"></div></div>
     <div class="section qr-urls">
       <h3>🎯 QR 코드 생성용 URL 목록</h3>
       <div class="url-item"><div class="url-label">1일차 오전</div><div class="url-link" id="url1"></div></div>
@@ -51,86 +46,68 @@
       <div class="url-item"><div class="url-label">2일차 오전</div><div class="url-link" id="url3"></div></div>
       <div class="url-item"><div class="url-label">2일차 오후</div><div class="url-link" id="url4"></div></div>
     </div>
-
     <div class="section controls">
       <button onclick="refreshData()">🔄 새로고침</button>
       <button onclick="exportData()">📊 CSV 내보내기</button>
       <button onclick="clearData()" style="background:#dc3545">🗑️ 데이터 초기화</button>
     </div>
-
     <div class="section stats">
       <div class="stat-item"><div class="stat-number" id="totalStudents">0</div><div class="stat-label">총 교육생</div></div>
       <div class="stat-item"><div class="stat-number" id="totalAttendance">0</div><div class="stat-label">전체 출석 건수</div></div>
       <div class="stat-item"><div class="stat-number" id="avgAttendanceRate">0%</div><div class="stat-label">평균 출석률</div></div>
     </div>
-
-    <div id="dashboard" class="section">
-      <table id="attendanceTable"><thead>
-        <tr><th>이름</th><th>휴대전화번호</th><th>1일차 오전</th><th>1일차 오후</th><th>2일차 오전</th><th>2일차 오후</th><th>출석률</th></tr>
-      </thead><tbody id="attendanceTableBody"></tbody></table>
-    </div>
+    <div class="section"><table id="attendanceTable"><thead>
+      <tr><th>이름</th><th>휴대전화번호</th><th>1일차 오전</th><th>1일차 오후</th><th>2일차 오전</th><th>2일차 오후</th><th>출석률</th></tr>
+    </thead><tbody id="attendanceTableBody"></tbody></table></div>
   </div>
 
   <script>
-    const SHEET_API_URL = 'https://script.google.com/macros/s/WEB_APP_ID/exec';
-    let studentList = {};
+    function handleStudentList(data){ window.studentList=data; initDashboard(); }
+    (function(){ const s=document.createElement('script'); s.src='https://script.google.com/macros/s/AKfycbwHysYm9ipYAUU6kF6xPy_xSCF5FoJ0jvCCMzXbNs6BNwxrkMNI3_D4hfcjt_BqBe5NUA/exec?callback=handleStudentList'; document.body.appendChild(s); })();
 
-    fetch(SHEET_API_URL)
-      .then(r=>r.json())
-      .then(d=>{studentList=d; initDashboard();})
-      .catch(()=>alert('명단 로드 실패'));
-
-    function initDashboard() {
-      document.getElementById('dashboard').style.display='block';
-      initURLs(); update(); setInterval(update,300000);
-    }
+    let deviceId=localStorage.getItem('deviceId');
+    if(!deviceId){ deviceId=crypto.randomUUID(); localStorage.setItem('deviceId',deviceId); }
 
     const events=['day1_morning','day1_evening','day2_morning','day2_evening'];
 
+    function initDashboard(){
+      document.getElementById('dashboard').style.display='block';
+      initURLs(); update(); setInterval(update,300000);
+    }
     function initURLs(){
       const base=location.origin+location.pathname.replace('admin_dashboard.html','');
       events.forEach((e,i)=>document.getElementById('url'+(i+1)).textContent=base+'?event='+e);
     }
-
-    function loadData(){return JSON.parse(localStorage.getItem('attendanceData')||'{}');}
-
+    function loadData(){ return JSON.parse(localStorage.getItem('attendanceData')||'{}'); }
     function update(){
-      const data=loadData(),tb=document.getElementById('attendanceTableBody');
-      tb.innerHTML='';let tot=Object.keys(studentList).length,ct=0,rs=0;
+      const d=loadData(),tb=document.getElementById('attendanceTableBody');
+      tb.innerHTML=''; let tot=Object.keys(studentList).length,c=0,s=0;
       Object.entries(studentList).forEach(([p,n])=>{
-        const tr=document.createElement('tr'),evs=data[p]?.events||{},h=Object.keys(evs).filter(x=>evs[x]).length;
-        const tdN=document.createElement('td');tdN.textContent=n;tdN.className='name-col';tr.appendChild(tdN);
-        const tdP=document.createElement('td');tdP.textContent=p.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3');tdP.className='phone-col';tr.appendChild(tdP);
-        events.forEach(e=>{
-          const td=document.createElement('td');
-          const r=evs[e];
-          if(r&&r.timestamp){const t=r.timestamp.split(', ')[1]||'';td.innerHTML=`<div class="present">출석</div><div style="font-size:10px;color:#666">${t}</div>`;ct++;}
-          else{td.textContent='미출석';td.className='absent';}
-          tr.appendChild(td);
-        });
-        const rate=Math.round(h/4*100);rs+=rate;
-        const tdR=document.createElement('td');tdR.textContent=rate+'%';tdR.style.color=rate>=75?'#28a745':rate>=50?'#ffc107':'#dc3545';tdR.style.fontWeight='bold';tr.appendChild(tdR);
+        const tr=document.createElement('tr'),ev=d[p]?.events||{},h=Object.keys(ev).filter(x=>ev[x]).length;
+        const tdN=document.createElement('td'); tdN.textContent=n; tdN.className='name-col'; tr.appendChild(tdN);
+        const tdP=document.createElement('td'); tdP.textContent=p.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3'); tdP.className='phone-col'; tr.appendChild(tdP);
+        events.forEach(e=>{ const td=document.createElement('td'),r=ev[e]; if(r&&r.timestamp){ const t=r.timestamp.split(', ')[1]||''; td.innerHTML=`<div class="present">출석</div><div style="font-size:10px;color:#666">${t}</div>`; c++; } else{ td.textContent='미출석'; td.className='absent'; } tr.appendChild(td); });
+        const rate=Math.round(h/4*100); s+=rate;
+        const tdR=document.createElement('td'); tdR.textContent=rate+'%'; tdR.style.color=rate>=75?'#28a745':rate>=50?'#ffc107':'#dc3545'; tdR.style.fontWeight='bold'; tr.appendChild(tdR);
         tb.appendChild(tr);
       });
       document.getElementById('totalStudents').textContent=tot;
-      document.getElementById('totalAttendance').textContent=ct;
-      document.getElementById('avgAttendanceRate').textContent=tot?Math.round(rs/tot)+'%':'0%';
+      document.getElementById('totalAttendance').textContent=c;
+      document.getElementById('avgAttendanceRate').textContent=tot?Math.round(s/tot)+'%':'0%';
       document.getElementById('lastUpdate').textContent='마지막 업데이트: '+new Date().toLocaleString('ko-KR');
     }
-
-    function refreshData(){update();alert('새로고침 완료');}
+    function refreshData(){ update(); alert('새로고침 완료'); }
     function exportData(){
-      const d=loadData(),lines=['Name,Phone,Mon,Ven,Wed,Thu,Rate'];
+      const d=loadData(),lines=['Name,Phone,Day1_M,Day1_E,Day2_M,Day2_E,Rate'];
       Object.entries(studentList).forEach(([p,n])=>{
-        const evs=d[p]?.events||{},arr=events.map(e=>evs[e]?.timestamp||'미출석'),cnt=arr.filter(x=>x!=='미출석').length;
+        const ev=d[p]?.events||{},arr=events.map(e=>ev[e]?.timestamp||'미출석'),cnt=arr.filter(x=>x!=='미출석').length;
         lines.push(`"${n}","${p.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3')}",`+arr.join(',')+','+Math.round(cnt/4*100)+'%');
       });
       const blob=new Blob([lines.join('\n')],{type:'text/csv'}),a=document.createElement('a');
-      a.href=URL.createObjectURL(blob);a.download=`attendance_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);a.click();document.body.removeChild(a);
+      a.href=URL.createObjectURL(blob); a.download=`attendance_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
-
-    function clearData(){if(confirm('모두 삭제?')){localStorage.removeItem('attendanceData');update();alert('삭제됨');}}
+    function clearData(){ if(confirm('모두 삭제?')){ localStorage.removeItem('attendanceData'); update(); alert('삭제됨'); } }
   </script>
 </body>
 </html>
