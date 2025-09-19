@@ -5,168 +5,157 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>출석체크 관리자 대시보드</title>
   <style>
-    /* 생략: 기존 관리자 스타일 유지 */
+    body { font-family:'Malgun Gothic',sans-serif; margin:0; padding:20px; background:#f5f5f5; }
+    .header { text-align:center; padding:20px; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; border-radius:10px; }
+    .section { margin:20px 0; background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+    .qr-urls .url-item { margin-bottom:10px; }
+    .url-link { font-family:monospace; word-break:break-all; color:#007bff; }
+    table { width:100%; border-collapse:collapse; }
+    th,td { padding:10px; border:1px solid #eee; text-align:center; }
+    th { background:#667eea; color:#fff; }
+    .present { color:#28a745; font-weight:bold; }
+    .absent { color:#dc3545; font-weight:bold; }
+    button { margin-right:10px; padding:8px 15px; border:none; border-radius:5px; color:#fff; cursor:pointer; }
+    .refresh { background:#667eea; }
+    .export { background:#28a745; }
+    .clear { background:#dc3545; }
   </style>
 </head>
 <body>
   <script>
     const ADMIN_PW = 'edu2025';
-    const pwd = prompt('관리자 패스워드:');
-    if (pwd !== ADMIN_PW) {
-      document.body.innerHTML = '<div style="text-align:center;padding:50px;"><h2>접근이 거부되었습니다.</h2></div>';
-      throw 'Unauthorized';
+    if (prompt('관리자 패스워드:') !== ADMIN_PW) {
+      document.body.innerHTML = '<h2 style="text-align:center;margin-top:50px;">접근이 거부되었습니다.</h2>';
+      throw '';
     }
   </script>
 
   <div id="dashboard" style="display:none;">
     <div class="header"><h1>📊 출석체크 관리자 대시보드</h1><div id="lastUpdate"></div></div>
+
     <div class="section qr-urls">
-      <h3>🎯 QR 코드 생성용 URL 목록</h3>
-      <div class="url-item"><div class="url-label">1일차 오전</div><div class="url-link" id="url1"></div></div>
-      <div class="url-item"><div class="url-label">1일차 오후</div><div class="url-link" id="url2"></div></div>
-      <div class="url-item"><div class="url-label">2일차 오전</div><div class="url-link" id="url3"></div></div>
-      <div class="url-item"><div class="url-label">2일차 오후</div><div class="url-link" id="url4"></div></div>
+      <h3>QR 코드 생성용 URL</h3>
+      <div class="url-item">1일차 오전: <span class="url-link" id="url1"></span></div>
+      <div class="url-item">1일차 오후: <span class="url-link" id="url2"></span></div>
+      <div class="url-item">2일차 오전: <span class="url-link" id="url3"></span></div>
+      <div class="url-item">2일차 오후: <span class="url-link" id="url4"></span></div>
     </div>
+
     <div class="section controls">
-      <button onclick="refreshData()">🔄 새로고침</button>
-      <button onclick="exportData()">📊 CSV 내보내기</button>
-      <button onclick="clearData()" style="background:#dc3545">🗑️ 데이터 초기화</button>
+      <button class="refresh" onclick="update()">🔄 새로고침</button>
+      <button class="export" onclick="exportCSV()">📊 CSV 내보내기</button>
+      <button class="clear" onclick="clearAll()">🗑️ 데이터 초기화</button>
     </div>
-    <div class="section stats">
-      <div class="stat-item"><div class="stat-number" id="totalStudents">0</div><div class="stat-label">총 교육생</div></div>
-      <div class="stat-item"><div class="stat-number" id="totalAttendance">0</div><div class="stat-label">전체 출석 건수</div></div>
-      <div class="stat-item"><div class="stat-number" id="avgAttendanceRate">0%</div><div class="stat-label">평균 출석률</div></div>
-    </div>
+
     <div class="section">
-      <table id="attendanceTable">
+      <table>
         <thead>
-          <tr><th>이름</th><th>휴대전화번호</th><th>1일차 오전</th><th>1일차 오후</th><th>2일차 오전</th><th>2일차 오후</th><th>출석률</th></tr>
+          <tr><th>이름</th><th>전화번호</th><th>1차오전</th><th>1차오후</th><th>2차오전</th><th>2차오후</th><th>출석률</th></tr>
         </thead>
-        <tbody id="attendanceTableBody"></tbody>
+        <tbody id="tbody"></tbody>
       </table>
     </div>
   </div>
 
   <script>
-    const STORAGE_KEY = 'qrcheckins_attendanceData';
-    let studentList = {};
-    const events = ['day1_morning','day1_evening','day2_morning','day2_evening'];
+    (function(){
+      const STORAGE_KEY = 'qrcheckins_attendanceData';
+      const events = ['day1_morning','day1_evening','day2_morning','day2_evening'];
+      let studentList = {};
 
-    // JSONP 콜백
-    function handleStudentList(data) {
-      studentList = data;
-      initDashboard();
-    }
+      // JSONP 콜백
+      window.handleStudentList = function(list) {
+        studentList = list;
+        init();
+      };
 
-    // 로드 학생 명단
-    document.addEventListener('DOMContentLoaded', function() {
-      const script = document.createElement('script');
-      script.src = 'https://script.google.com/macros/s/AKfycbwHysYm9ipYAUU6kF6xPy_xSCF5FoJ0jvCCMzXbNs6BNwxrkMNI3_D4hfcjt_BqBe5NUA/exec'
-                 + '?callback=handleStudentList&ts=' + Date.now();
-      document.body.appendChild(script);
-    });
-
-    function initDashboard() {
-      document.getElementById('dashboard').style.display = 'block';
-      initURLs();
-      update();
-      setInterval(update, 300000);
-    }
-
-    function initURLs() {
-      const base = location.origin + location.pathname.replace('admin_dashboard.html','');
-      events.forEach((e,i) => {
-        document.getElementById('url'+(i+1)).textContent = base + '?event=' + e;
-      });
-    }
-
-    function loadData() {
-      try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-      } catch {
-        return {};
-      }
-    }
-
-    function update() {
-      const data = loadData();
-      const tbody = document.getElementById('attendanceTableBody');
-      tbody.innerHTML = '';
-      const totalStudents = Object.keys(studentList).length;
-      let totalAtt = 0, sumRate = 0;
-
-      Object.entries(studentList).forEach(([phone,name]) => {
-        const tr = document.createElement('tr');
-        const ev = data[phone]?.events || {};
-        let count = 0;
-
-        // 이름, 전화번호 셀
-        const tdName = document.createElement('td'); tdName.textContent = name; tr.appendChild(tdName);
-        const tdPhone = document.createElement('td'); tdPhone.textContent = phone.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3'); tr.appendChild(tdPhone);
-
-        // 이벤트별 출석
-        events.forEach(evt => {
-          const td = document.createElement('td');
-          const rec = ev[evt];
-          if (rec && rec.timestamp) {
-            const timePart = rec.timestamp.split(', ')[1] || rec.timestamp;
-            td.innerHTML = `<div style="color:#28a745;font-weight:bold">출석</div><div style="font-size:10px;color:#666">${timePart}</div>`;
-            count++; totalAtt++;
-          } else {
-            td.textContent = '미출석'; td.style.color = '#dc3545'; td.style.fontWeight = 'bold';
-          }
-          tr.appendChild(td);
-        });
-
-        // 출석률
-        const rate = Math.round(count / events.length * 100);
-        sumRate += rate;
-        const tdRate = document.createElement('td');
-        tdRate.textContent = rate + '%';
-        tdRate.style.color = rate >= 75 ? '#28a745' : rate >= 50 ? '#ffc107' : '#dc3545';
-        tdRate.style.fontWeight = 'bold';
-        tr.appendChild(tdRate);
-
-        tbody.appendChild(tr);
+      // 명단 로드
+      document.addEventListener('DOMContentLoaded', () => {
+        const s = document.createElement('script');
+        s.src = 'https://script.google.com/macros/s/AKfycbwHysYm9ipYAUU6kF6xPy_xSCF5FoJ0jvCCMzXbNs6BNwxrkMNI3_D4hfcjt_BqBe5NUA/exec'
+              + '?callback=handleStudentList&ts=' + Date.now();
+        s.onerror = ()=> alert('명단 로드 실패');
+        document.body.appendChild(s);
       });
 
-      document.getElementById('totalStudents').textContent = totalStudents;
-      document.getElementById('totalAttendance').textContent = totalAtt;
-      document.getElementById('avgAttendanceRate').textContent = totalStudents ? Math.round(sumRate/totalStudents)+'%' : '0%';
-      document.getElementById('lastUpdate').textContent = '마지막 업데이트: ' + new Date().toLocaleString('ko-KR');
-    }
-
-    function refreshData() {
-      update();
-      alert('데이터가 새로고침되었습니다.');
-    }
-
-    function exportData() {
-      const data = loadData();
-      const rows = ['Name,Phone,' + events.map(e=>e).join(',') + ',Rate'];
-      Object.entries(studentList).forEach(([phone,name]) => {
-        const ev = data[phone]?.events || {};
-        const parts = events.map(e => ev[e]?.timestamp || '미출석');
-        const cnt = parts.filter(p => p!=='미출석').length;
-        rows.push(`"${name}","${phone.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3')}",` + parts.join(',') + ',' + Math.round(cnt/events.length*100)+'%');
-      });
-      const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `attendance_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-
-    function clearData() {
-      if (confirm('모든 출석 데이터를 삭제하시겠습니까?')) {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem('deviceId');
+      function init() {
+        document.getElementById('dashboard').style.display = 'block';
+        setQRUrls();
         update();
-        alert('데이터와 디바이스 ID가 초기화되었습니다.');
+        setInterval(update,300000);
       }
-    }
+
+      function setQRUrls(){
+        const base = location.origin + location.pathname.replace('admin_dashboard.html','');
+        events.forEach((e,i)=>{
+          document.getElementById('url'+(i+1)).textContent = base + '?event=' + e;
+        });
+      }
+
+      function loadData(){
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY))||{}; }
+        catch { return {}; }
+      }
+
+      function update(){
+        const data = loadData();
+        const tbody = document.getElementById('tbody');
+        tbody.innerHTML = '';
+        let total=0, sumRate=0, countAll=0;
+        Object.entries(studentList).forEach(([p,n])=>{
+          total++;
+          const row = document.createElement('tr');
+          const evs = data[p]?.events||{};
+          let cnt=0;
+          // 이름, 전화
+          row.appendChild(td(n));
+          row.appendChild(td(p.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3')));
+          events.forEach(evt=>{
+            const cell = document.createElement('td');
+            if(evs[evt]?.timestamp){
+              const t = evs[evt].timestamp.split(', ')[1];
+              cell.innerHTML = '<span class="present">출석</span><br><small>'+t+'</small>';
+              cnt++; countAll++;
+            } else {
+              cell.innerHTML = '<span class="absent">미출석</span>';
+            }
+            row.appendChild(cell);
+          });
+          const rate = Math.round(cnt/events.length*100);
+          sumRate+=rate;
+          row.appendChild(td(rate+'%', rate>=75?'#28a745':rate>=50?'#ffc107':'#dc3545'));
+          tbody.appendChild(row);
+        });
+        document.getElementById('lastUpdate').textContent = '마지막 업데이트: '+new Date().toLocaleString();
+      }
+
+      function td(txt,color){
+        const c=document.createElement('td'); c.textContent=txt; if(color) c.style.color=color;
+        return c;
+      }
+
+      function exportCSV(){
+        const data = loadData(), lines = ['Name,Phone,'+events.join(',')+',Rate'];
+        Object.entries(studentList).forEach(([p,n])=>{
+          const evs = data[p]?.events||{};
+          const arr = events.map(e=>evs[e]?.timestamp||'미출석');
+          const cnt = arr.filter(x=>x!=='미출석').length;
+          lines.push(`"${n}","${p.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3')}",`+arr.join(',')+','+Math.round(cnt/events.length*100)+'%');
+        });
+        const blob=new Blob([lines.join('\n')],{type:'text/csv'}),a=document.createElement('a');
+        a.href=URL.createObjectURL(blob); a.download='attendance_'+new Date().toISOString().split('T')[0]+'.csv';
+        a.click();
+      }
+
+      function clearAll(){
+        if(confirm('모두 삭제?')){
+          localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem('deviceId');
+          update();
+          alert('데이터 초기화 완료');
+        }
+      }
+    })();
   </script>
 </body>
 </html>
