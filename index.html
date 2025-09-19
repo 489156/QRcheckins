@@ -5,95 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>교육 출석체크</title>
   <style>
-    body {
-      font-family: 'Malgun Gothic', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      margin: 0; padding: 20px;
-      min-height: 100vh;
-      display: flex; justify-content: center; align-items: center;
-    }
-    .container {
-      background: white; padding: 40px;
-      border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-      text-align: center; max-width: 400px; width: 100%;
-    }
-    .event-badge {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white; padding: 10px 20px;
-      border-radius: 20px; font-size: 16px;
-      font-weight: bold; margin-bottom: 20px;
-      display: inline-block;
-    }
-    .title {
-      color: #333; font-size: 28px;
-      margin-bottom: 30px; font-weight: bold;
-    }
-    .error-page {
-      background: #f8d7da; border: 1px solid #f5c6cb;
-      padding: 20px; border-radius: 10px;
-      margin-bottom: 20px; display: none;
-    }
-    .error-page h2 { color: #721c24; margin-top: 0; }
-    .input-group { margin-bottom: 30px; }
-    label {
-      display: block; margin-bottom: 10px;
-      color: #555; font-size: 18px; font-weight: bold;
-    }
-    input[type="tel"] {
-      width: 100%; padding: 15px; font-size: 18px;
-      border: 2px solid #ddd; border-radius: 8px;
-      box-sizing: border-box; text-align: center;
-    }
-    input[type="tel"]:focus {
-      border-color: #667eea; outline: none;
-      box-shadow: 0 0 10px rgba(102,126,234,0.3);
-    }
-    .submit-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white; padding: 15px 40px;
-      font-size: 20px; font-weight: bold;
-      border: none; border-radius: 8px;
-      cursor: pointer; width: 100%;
-      transition: transform 0.2s;
-    }
-    .submit-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    }
-    .submit-btn:disabled {
-      background: #ccc; cursor: not-allowed; transform: none;
-    }
-    .message {
-      margin-top: 20px; padding: 15px;
-      border-radius: 8px; font-weight: bold;
-      display: none;
-    }
-    .success {
-      background: #d4edda; color: #155724;
-      border: 1px solid #c3e6cb;
-    }
-    .error {
-      background: #f8d7da; color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-    .info {
-      margin-top: 20px; color: #666;
-      font-size: 14px; line-height: 1.5;
-      display: none;
-    }
+    body { font-family: 'Malgun Gothic', sans-serif; background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); margin:0; padding:20px; min-height:100vh; display:flex; justify-content:center; align-items:center; }
+    .container { background:white; padding:40px; border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,0.3); text-align:center; max-width:400px; width:100%; }
+    .event-badge { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:white; padding:10px 20px; border-radius:20px; font-size:16px; font-weight:bold; margin-bottom:20px; display:inline-block; }
+    .title { color:#333; font-size:28px; margin-bottom:30px; font-weight:bold; }
+    .error-page { background:#f8d7da; border:1px solid #f5c6cb; padding:20px; border-radius:10px; margin-bottom:20px; display:none; }
+    .error-page h2 { color:#721c24; margin-top:0; }
+    .input-group { margin-bottom:30px; }
+    label { display:block; margin-bottom:10px; color:#555; font-size:18px; font-weight:bold; }
+    input[type="tel"] { width:100%; padding:15px; font-size:18px; border:2px solid #ddd; border-radius:8px; box-sizing:border-box; text-align:center; }
+    input[type="tel"]:focus { border-color:#667eea; outline:none; box-shadow:0 0 10px rgba(102,126,234,0.3); }
+    .submit-btn { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:white; padding:15px 40px; font-size:20px; font-weight:bold; border:none; border-radius:8px; cursor:pointer; width:100%; transition:transform 0.2s; }
+    .submit-btn:hover { transform:translateY(-2px); box-shadow:0 5px 15px rgba(0,0,0,0.2); }
+    .submit-btn:disabled { background:#ccc; cursor:not-allowed; transform:none; }
+    .message { margin-top:20px; padding:15px; border-radius:8px; font-weight:bold; display:none; }
+    .success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
+    .error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
+    .info { margin-top:20px; color:#666; font-size:14px; line-height:1.5; display:none; }
   </style>
 </head>
 <body>
   <div class="container">
     <div id="eventBadge" class="event-badge"></div>
     <div class="title">📋 교육 출석체크</div>
-
-    <div id="errorMessage" class="error-page">
+    <div id="errorPage" class="error-page">
       <h2>⚠️ 잘못된 접근입니다</h2>
       <p>올바른 QR코드를 스캔하여 접속해주세요.</p>
     </div>
-
     <form id="attendanceForm" style="display:none;">
       <div class="input-group">
         <label for="phone">휴대전화번호</label>
@@ -101,7 +39,6 @@
       </div>
       <button type="submit" id="submitBtn" class="submit-btn">출석 확인</button>
     </form>
-
     <div id="message" class="message"></div>
     <div id="infoSection" class="info">
       휴대전화번호를 입력하여 출석체크를 완료해주세요.<br>
@@ -110,112 +47,79 @@
   </div>
 
   <script>
-    // 디바이스 ID 생성/저장
-    let deviceId = localStorage.getItem('deviceId');
-    if (!deviceId) {
-      deviceId = crypto.randomUUID();
-      localStorage.setItem('deviceId', deviceId);
-    }
+    // Web App URL
+    const SHEET_API_URL = 'https://script.google.com/macros/s/WEB_APP_ID/exec';
 
-    // 학생 명단 (하이픈 제거된 상태)
-    const studentList = {
-            '01082123698': '신동하',
-            '01048842236': '이성주',
-            '01044110409': '하나현',
-            '01093763225': '김재하',
-            '01091573109': '한승호',
-            '01073591226': '문영주',
-            '01022219219': '김재영',
-            '01048749245': '박성호',
-            '01094796810': '강현정',
-            '01027754561': '양문일',
-            '01034341343': '박도연',
-            '01072230475': '김혜리',
-            '01040546272': '김기태',
-            '01026529008': '황현진',
-            '01038388015': '권윤경',
-            '01025532652': '윤정훈',
-            '01083685635': '손석홍',
-            '01029127176': '엄기철',
-            '01033074257': '송용석',
-            '01028798460': '오철진',
-            '01072774457': '유영욱',
-            '01045666411': '이승희',
-            '01043798508': '이병길',
-            '01088741172': '김희영',
-            '01062644832': '손영지',
-            '01072443789': '예성민',
-            '01067899391': '문지수',
-            '01082183288': '조혜정',
-            '01066546059': '고재윤',
-            '01091676897': '성상훈',
-            '01092784335': '이미경',
-            '01090087476': '김경란',
-            '01030634395': '조규태',
-            '01024219154': '최경훈',
-            '01040009967': '신현정',
-            '01090039373': '김종필',
-            '01047698831': '장원구',
-            '01087392594': '이현주'
-    };
+    // 전역 변수
+    let studentList = {};
+    let deviceId = localStorage.getItem('deviceId') || (crypto.randomUUID() && localStorage.setItem('deviceId', deviceId));
+
     const eventNames = {
       'day1_morning':'1일차 오전 (09:00)',
       'day1_evening':'1일차 오후 (17:30)',
       'day2_morning':'2일차 오전 (09:00)',
       'day2_evening':'2일차 오후 (17:30)'
     };
-
-    // URL 파라미터로 이벤트 결정
     const params = new URLSearchParams(location.search);
     const currentEvent = params.get('event');
 
-    // 페이지 초기화
-    function init() {
+    // 명단 로드
+    fetch(SHEET_API_URL)
+      .then(res => res.json())
+      .then(data => {
+        studentList = data;
+        initialize();
+      })
+      .catch(() => {
+        alert('명단 로드에 실패했습니다.');
+      });
+
+    function initialize() {
       if (!eventNames[currentEvent]) {
-        document.getElementById('errorMessage').style.display = 'block';
+        document.getElementById('errorPage').style.display = 'block';
         return;
       }
       document.getElementById('eventBadge').textContent = eventNames[currentEvent];
       document.getElementById('attendanceForm').style.display = 'block';
       document.getElementById('infoSection').style.display = 'block';
-    }
-    init();
 
-    // 출석 처리
-    document.getElementById('attendanceForm').addEventListener('submit', e => {
+      document.getElementById('attendanceForm').addEventListener('submit', handleSubmit);
+    }
+
+    function handleSubmit(e) {
       e.preventDefault();
       const raw = document.getElementById('phone').value;
       const phone = raw.replace(/[^0-9]/g,'');
-      if (phone.length!==11 || !phone.startsWith('010')) {
-        return show('올바른 휴대전화번호를 입력해주세요.','error');
+      if (phone.length !== 11 || !phone.startsWith('010')) {
+        return showMessage('올바른 휴대전화번호를 입력해주세요.','error');
       }
       const name = studentList[phone];
       if (!name) {
-        return show('등록되지 않은 휴대전화번호입니다.','error');
+        return showMessage('등록되지 않은 휴대전화번호입니다.','error');
       }
       let data = JSON.parse(localStorage.getItem('attendanceData')||'{}');
-      if (!data[phone]) data[phone]={name,events:{}};
+      if (!data[phone]) data[phone] = { name, events: {} };
       const rec = data[phone].events[currentEvent];
       if (rec) {
-        if (rec.deviceId!==deviceId) {
-          return show('이 번호는 다른 기기에서 이미 출석했습니다.','error');
-        }
-        return show(`${name}님은 이미 출석하셨습니다.`,'error');
+        if (rec.deviceId !== deviceId) return showMessage('다른 기기에서 이미 출석했습니다.','error');
+        return showMessage(`${name}님은 이미 출석하셨습니다.`,'error');
       }
       const now = new Date();
       const ts = String(now.getMonth()+1).padStart(2,'0') + '/'
                + String(now.getDate()).padStart(2,'0') + ', '
                + String(now.getHours()).padStart(2,'0') + ':'
                + String(now.getMinutes()).padStart(2,'0');
-      data[phone].events[currentEvent] = {timestamp:ts,deviceId};
-      localStorage.setItem('attendanceData',JSON.stringify(data));
-      show(`${name}님, ${eventNames[currentEvent]} 출석 완료 (${ts})`,'success');
-    });
+      data[phone].events[currentEvent] = { timestamp: ts, deviceId };
+      localStorage.setItem('attendanceData', JSON.stringify(data));
+      showMessage(`${name}님, 출석 완료 (${ts})`,'success');
+    }
 
-    function show(msg,type){
+    function showMessage(text, type) {
       const el = document.getElementById('message');
-      el.textContent=msg; el.className=`message ${type}`; el.style.display='block';
-      if(type==='success') setTimeout(()=>location.reload(),2000);
+      el.textContent = text;
+      el.className = `message ${type}`;
+      el.style.display = 'block';
+      if (type === 'success') setTimeout(() => location.reload(), 2000);
     }
   </script>
 </body>
