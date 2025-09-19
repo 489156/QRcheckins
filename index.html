@@ -6,183 +6,557 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <title>교육 출석체크</title>
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    html, body {
-      height:100%;
-      overflow:hidden;
+    * { 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box; 
+      -webkit-tap-highlight-color: transparent;
     }
+    
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+    
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-      display:flex; justify-content:center; align-items:center;
-      -webkit-tap-highlight-color:transparent;
-      padding:20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
     }
+    
     .container {
-      background:#fff; border-radius:20px; padding:30px;
-      box-shadow:0 20px 60px rgba(0,0,0,0.3);
-      width:100%; max-width:400px; position:relative;
-      overflow-y:auto; -webkit-overflow-scrolling:touch;
+      background: #fff;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 400px;
+      position: relative;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      max-height: 90vh;
     }
+    
     .event-badge {
-      display:inline-block; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-      color:#fff; padding:10px 20px; border-radius:20px;
-      font-size:16px; font-weight:bold; margin-bottom:20px;
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 20px;
     }
-    .title { font-size:24px; color:#333; margin-bottom:20px; font-weight:bold; text-align:center; }
+    
+    .title {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+    
     .error-page {
-      display:none; background:#f8d7da; border:1px solid #f5c6cb;
-      padding:20px; border-radius:10px; text-align:center; margin-bottom:20px;
+      display: none;
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      margin-bottom: 20px;
     }
-    .error-page h2 { color:#721c24; margin-bottom:10px; }
-    form { margin-bottom:20px; }
-    .input-group { margin-bottom:20px; }
-    label { display:block; font-size:16px; color:#555; margin-bottom:8px; }
+    
+    .error-page h2 {
+      color: #721c24;
+      margin-bottom: 10px;
+    }
+    
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+    
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    form {
+      margin-bottom: 20px;
+    }
+    
+    .input-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    
     input[type="tel"] {
-      width:100%; padding:12px; font-size:16px;
-      border:2px solid #ddd; border-radius:8px; text-align:center;
+      width: 100%;
+      padding: 15px;
+      font-size: 16px;
+      border: 2px solid #e1e8ed;
+      border-radius: 10px;
+      text-align: center;
+      -webkit-appearance: none;
+      appearance: none;
     }
+    
     input[type="tel"]:focus {
-      outline:none; border-color:#667eea; box-shadow:0 0 8px rgba(102,126,234,0.3);
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
+    
     .submit-btn {
-      width:100%; padding:12px; font-size:18px; font-weight:bold;
-      color:#fff; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-      border:none; border-radius:8px; cursor:pointer;
+      width: 100%;
+      padding: 15px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.2s, opacity 0.2s;
+      touch-action: manipulation;
     }
+    
+    .submit-btn:active {
+      transform: scale(0.98);
+    }
+    
     .submit-btn:disabled {
-      background:#ccc; cursor:not-allowed;
+      opacity: 0.6;
+      cursor: not-allowed;
     }
+    
     .message {
-      display:none; margin-top:20px; padding:12px; border-radius:8px; font-weight:bold;
+      display: none;
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      font-weight: 600;
+      text-align: center;
+      animation: slideIn 0.3s ease;
     }
-    .message.success { background:#d4edda; color:#155724; }
-    .message.error { background:#f8d7da; color:#721c24; }
-    .info { display:none; font-size:14px; color:#666; text-align:center; }
-    @media(max-width:480px){
-      .container { padding:20px; }
-      .title { font-size:20px; }
-      input[type="tel"], .submit-btn { font-size:16px; padding:10px; }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .message.warning {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeeba;
+    }
+    
+    .info {
+      display: none;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e1e8ed;
+      font-size: 14px;
+      color: #666;
+      text-align: center;
+      line-height: 1.6;
+    }
+    
+    @media (max-width: 480px) {
+      .container {
+        padding: 20px;
+      }
+      .title {
+        font-size: 20px;
+      }
+      input[type="tel"], .submit-btn {
+        font-size: 16px;
+      }
+    }
+    
+    /* iOS 입력 필드 확대 방지 */
+    @supports (-webkit-touch-callout: none) {
+      input[type="tel"] {
+        font-size: 16px !important;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container" id="app">
-    <div id="eventBadge" class="event-badge"></div>
+    <div id="eventBadge" class="event-badge" style="display:none;"></div>
     <div class="title">📋 교육 출석체크</div>
+    
+    <div id="loadingPage" class="loading">
+      <div class="spinner"></div>
+      <p>데이터를 불러오는 중...</p>
+    </div>
+    
     <div id="errorPage" class="error-page">
       <h2>⚠️ 잘못된 접근입니다</h2>
       <p>올바른 QR코드를 스캔하여 접속해주세요.</p>
     </div>
+    
     <form id="attendanceForm" style="display:none;">
       <div class="input-group">
         <label for="phone">휴대전화번호</label>
-        <input type="tel" id="phone" inputmode="numeric" placeholder="010-1234-5678" maxlength="13" autocomplete="off" required>
+        <input type="tel" 
+               id="phone" 
+               inputmode="numeric" 
+               placeholder="010-1234-5678" 
+               maxlength="13" 
+               autocomplete="off" 
+               required>
       </div>
       <button type="submit" id="submitBtn" class="submit-btn">출석 확인</button>
     </form>
+    
     <div id="message" class="message"></div>
+    
     <div id="infoSection" class="info">
-      휴대전화번호를 입력하여 출석체크를 완료해주세요.<br>하이픈(-)은 있어도 없어도 됩니다.
+      휴대전화번호를 입력하여 출석체크를 완료해주세요.<br>
+      하이픈(-)은 자동으로 추가됩니다.
     </div>
   </div>
 
   <script>
     (function() {
+      'use strict';
+      
+      // 상수 정의
       const STORAGE_KEY = 'qrcheckins_attendanceData';
-      let studentList = {};
-      // 디바이스 ID 생성/조회 (폴리필 지원)
-      let deviceId = localStorage.getItem('deviceId');
-      if (!deviceId) {
-        if (crypto.randomUUID) deviceId = crypto.randomUUID();
-        else deviceId = 'id-' + ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));
-        localStorage.setItem('deviceId', deviceId);
-      }
+      const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwHysYm9ipYAUU6kF6xPy_xSCF5FoJ0jvCCMzXbNs6BNwxrkMNI3_D4hfcjt_BqBe5NUA/exec';
       const eventNames = {
-        day1_morning:'1일차 오전 (09:00)',
-        day1_evening:'1일차 오후 (17:30)',
-        day2_morning:'2일차 오전 (09:00)',
-        day2_evening:'2일차 오후 (17:30)'
+        day1_morning: '1일차 오전 (09:00)',
+        day1_evening: '1일차 오후 (17:30)',
+        day2_morning: '2일차 오전 (09:00)',
+        day2_evening: '2일차 오후 (17:30)'
       };
+      
+      // 전역 변수
+      let studentList = {};
+      let deviceId = null;
+      let isProcessing = false;
       const currentEvent = new URLSearchParams(location.search).get('event');
-
-      // 메시지 표시
-      function showMessage(txt, type) {
-        const msg = document.getElementById('message');
-        msg.textContent = txt;
-        msg.className = 'message ' + type;
-        msg.style.display = 'block';
-        if (type === 'success') {
-          document.getElementById('submitBtn').disabled = true;
-          setTimeout(()=> location.reload(), 2000);
+      
+      // localStorage 안전 접근
+      function safeStorage() {
+        try {
+          const test = '__test__';
+          localStorage.setItem(test, 'test');
+          localStorage.removeItem(test);
+          return true;
+        } catch (e) {
+          return false;
         }
       }
-
+      
+      // UUID 생성 (폴리필 포함)
+      function generateUUID() {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+          return crypto.randomUUID();
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          const r = Math.random() * 16 | 0;
+          const v = c === 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      }
+      
+      // Device ID 가져오기/생성
+      function getDeviceId() {
+        if (!safeStorage()) {
+          if (!window.sessionDeviceId) {
+            window.sessionDeviceId = generateUUID();
+          }
+          return window.sessionDeviceId;
+        }
+        
+        let id = localStorage.getItem('deviceId');
+        if (!id) {
+          id = generateUUID();
+          try {
+            localStorage.setItem('deviceId', id);
+          } catch (e) {
+            console.warn('Device ID 저장 실패');
+          }
+        }
+        return id;
+      }
+      
+      // 데이터 저장
+      function saveData(data) {
+        if (!safeStorage()) {
+          window.tempAttendanceData = data;
+          return true;
+        }
+        
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          return true;
+        } catch (e) {
+          console.error('데이터 저장 실패:', e);
+          if (e.name === 'QuotaExceededError') {
+            try {
+              // 오래된 데이터 정리
+              localStorage.clear();
+              localStorage.setItem('deviceId', deviceId);
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+              return true;
+            } catch (e2) {
+              console.error('저장 공간 정리 실패');
+            }
+          }
+          return false;
+        }
+      }
+      
+      // 데이터 로드
+      function loadData() {
+        if (!safeStorage()) {
+          return window.tempAttendanceData || {};
+        }
+        
+        try {
+          const data = localStorage.getItem(STORAGE_KEY);
+          return data ? JSON.parse(data) : {};
+        } catch (e) {
+          console.error('데이터 로드 실패');
+          return {};
+        }
+      }
+      
+      // 전화번호 포맷팅
+      function formatPhone(value) {
+        const numbers = value.replace(/[^0-9]/g, '');
+        let formatted = '';
+        
+        if (numbers.length <= 3) {
+          formatted = numbers;
+        } else if (numbers.length <= 7) {
+          formatted = numbers.slice(0, 3) + '-' + numbers.slice(3);
+        } else {
+          formatted = numbers.slice(0, 3) + '-' + numbers.slice(3, 7) + '-' + numbers.slice(7, 11);
+        }
+        
+        return formatted;
+      }
+      
+      // 메시지 표시
+      function showMessage(text, type) {
+        const el = document.getElementById('message');
+        el.textContent = text;
+        el.className = 'message ' + type;
+        el.style.display = 'block';
+        
+        if (type === 'success') {
+          document.getElementById('submitBtn').disabled = true;
+          setTimeout(() => {
+            location.reload();
+          }, 2000);
+        }
+      }
+      
       // 페이지 초기화
-      function init() {
+      function initialize() {
+        document.getElementById('loadingPage').style.display = 'none';
+        
         if (!eventNames[currentEvent]) {
           document.getElementById('errorPage').style.display = 'block';
           return;
         }
+        
+        if (!studentList || Object.keys(studentList).length === 0) {
+          showMessage('학생 명단을 불러올 수 없습니다.', 'error');
+          return;
+        }
+        
+        deviceId = getDeviceId();
+        
         document.getElementById('eventBadge').textContent = eventNames[currentEvent];
+        document.getElementById('eventBadge').style.display = 'inline-block';
         document.getElementById('attendanceForm').style.display = 'block';
         document.getElementById('infoSection').style.display = 'block';
-        document.getElementById('attendanceForm').addEventListener('submit', onSubmit);
-      }
-
-      // 출석 제출
-      function onSubmit(e) {
-        e.preventDefault();
-        const raw = document.getElementById('phone').value;
-        const phone = raw.replace(/[^0-9]/g,'');
-        if (phone.length !== 11 || !phone.startsWith('010')) {
-          return showMessage('올바른 휴대전화번호를 입력해주세요.', 'error');
-        }
-        const name = studentList[phone];
-        if (!name) {
-          return showMessage('등록되지 않은 휴대전화번호입니다.', 'error');
-        }
-        // 읽기
-        let data = {};
-        try { data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
-        catch { data = {}; }
-        // 중복 디바이스 체크
-        for (const rec of Object.values(data)) {
-          if (rec.events[currentEvent] && rec.events[currentEvent].deviceId === deviceId) {
-            return showMessage('이미 이 기기로 다른 교육생이 출석했습니다.', 'error');
+        
+        // 전화번호 입력 포맷팅
+        const phoneInput = document.getElementById('phone');
+        phoneInput.addEventListener('input', function(e) {
+          const formatted = formatPhone(e.target.value);
+          if (e.target.value !== formatted) {
+            e.target.value = formatted;
           }
-        }
-        // 중복 번호 체크
-        if (data[phone]?.events?.[currentEvent]) {
-          return showMessage(name + '님은 이미 출석하셨습니다.', 'error');
-        }
-        // 저장
-        const now = new Date();
-        const ts = (now.getMonth()+1).toString().padStart(2,'0') + '/'
-                 + now.getDate().toString().padStart(2,'0') + ', '
-                 + now.getHours().toString().padStart(2,'0') + ':'
-                 + now.getMinutes().toString().padStart(2,'0');
-        if (!data[phone]) data[phone] = { name, events:{} };
-        data[phone].events[currentEvent] = { timestamp:ts, deviceId };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        showMessage(name + '님, 출석 완료 ('+ts+')', 'success');
+        });
+        
+        // 폼 제출 핸들러
+        document.getElementById('attendanceForm').addEventListener('submit', handleSubmit);
       }
-
+      
+      // 출석 처리
+      function handleSubmit(e) {
+        e.preventDefault();
+        
+        if (isProcessing) return;
+        isProcessing = true;
+        
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = '처리 중...';
+        
+        try {
+          const raw = document.getElementById('phone').value;
+          const phone = raw.replace(/[^0-9]/g, '');
+          
+          // 유효성 검사
+          if (phone.length !== 11 || !phone.startsWith('010')) {
+            showMessage('올바른 휴대전화번호를 입력해주세요.', 'error');
+            return;
+          }
+          
+          const name = studentList[phone];
+          if (!name) {
+            showMessage('등록되지 않은 휴대전화번호입니다.', 'error');
+            return;
+          }
+          
+          const data = loadData();
+          
+          // 중복 디바이스 체크
+          for (const [storedPhone, entry] of Object.entries(data)) {
+            const record = entry.events && entry.events[currentEvent];
+            if (record && record.deviceId === deviceId && storedPhone !== phone) {
+              showMessage('이미 이 기기로 다른 교육생이 출석했습니다.', 'error');
+              return;
+            }
+          }
+          
+          // 중복 출석 체크
+          if (data[phone] && data[phone].events && data[phone].events[currentEvent]) {
+            showMessage(name + '님은 이미 출석하셨습니다.', 'warning');
+            return;
+          }
+          
+          // 타임스탬프 생성
+          const now = new Date();
+          const timestamp = String(now.getMonth() + 1).padStart(2, '0') + '/' +
+                          String(now.getDate()).padStart(2, '0') + ', ' +
+                          String(now.getHours()).padStart(2, '0') + ':' +
+                          String(now.getMinutes()).padStart(2, '0');
+          
+          // 데이터 저장
+          if (!data[phone]) {
+            data[phone] = { name: name, events: {} };
+          }
+          data[phone].events[currentEvent] = {
+            timestamp: timestamp,
+            deviceId: deviceId
+          };
+          
+          if (saveData(data)) {
+            showMessage(name + '님, 출석이 완료되었습니다! (' + timestamp + ')', 'success');
+          } else {
+            showMessage('출석 처리 중 오류가 발생했습니다.', 'error');
+          }
+          
+        } finally {
+          isProcessing = false;
+          submitBtn.disabled = false;
+          submitBtn.textContent = '출석 확인';
+        }
+      }
+      
       // JSONP 콜백
       window.handleStudentList = function(list) {
         studentList = list;
-        init();
+        initialize();
       };
-
-      // JSONP 로드 with cache bust
-      document.addEventListener('DOMContentLoaded', ()=> {
-        const s = document.createElement('script');
-        s.src = 'https://script.google.com/macros/s/AKfycbwHysYm9ipYAUU6kF6xPy_xSCF5FoJ0jvCCMzXbNs6BNwxrkMNI3_D4hfcjt_BqBe5NUA/exec'
-              + '?callback=handleStudentList&ts=' + Date.now();
-        s.onload = ()=> console.log('명단 로드 완료');
-        s.onerror = ()=> showMessage('명단 로드에 실패했습니다. 네트워크를 확인하세요.', 'error');
-        document.body.appendChild(s);
+      
+      // JSONP 로드
+      function loadStudentList() {
+        document.getElementById('loadingPage').style.display = 'block';
+        
+        const script = document.createElement('script');
+        script.src = SCRIPT_URL + '?callback=handleStudentList&ts=' + Date.now();
+        
+        const timeout = setTimeout(() => {
+          document.getElementById('loadingPage').style.display = 'none';
+          showMessage('서버 연결에 실패했습니다. 페이지를 새로고침해주세요.', 'error');
+        }, 10000);
+        
+        script.onload = () => {
+          clearTimeout(timeout);
+          console.log('학생 명단 로드 완료');
+        };
+        
+        script.onerror = () => {
+          clearTimeout(timeout);
+          document.getElementById('loadingPage').style.display = 'none';
+          showMessage('명단 로드에 실패했습니다. 네트워크를 확인하세요.', 'error');
+        };
+        
+        document.body.appendChild(script);
+      }
+      
+      // 페이지 로드 시 실행
+      document.addEventListener('DOMContentLoaded', function() {
+        // 네트워크 상태 확인
+        if (!navigator.onLine) {
+          document.getElementById('loadingPage').style.display = 'none';
+          showMessage('인터넷 연결이 필요합니다.', 'error');
+          return;
+        }
+        
+        loadStudentList();
+        
+        // 온라인/오프라인 이벤트
+        window.addEventListener('online', () => {
+          showMessage('인터넷 연결이 복구되었습니다.', 'success');
+          setTimeout(() => location.reload(), 1000);
+        });
+        
+        window.addEventListener('offline', () => {
+          showMessage('인터넷 연결이 끊어졌습니다.', 'error');
+        });
       });
+      
     })();
   </script>
 </body>
