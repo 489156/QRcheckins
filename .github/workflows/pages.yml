@@ -1,9 +1,16 @@
 name: Deploy to GitHub Pages
 
+# 1. 언제 실행할지 지정
 on:
   push:
     branches:
       - main
+
+# 2. GITHUB_TOKEN 권한 설정
+permissions:
+  contents: read         # 리포지토리 콘텐츠 읽기(필수)
+  pages: write           # Pages 배포 권한(필수)
+  id-token: write        # OIDC 토큰 발급 권한(필수)
 
 jobs:
   pages:
@@ -20,7 +27,7 @@ jobs:
         run: echo "No build needed for static HTML"
 
       - name: Upload artifact for deployment
-        uses: actions/upload-artifact@v4    # v4로 업데이트
+        uses: actions/upload-artifact@v4
         with:
           path: .
 
